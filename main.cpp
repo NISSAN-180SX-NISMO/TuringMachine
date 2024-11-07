@@ -1,8 +1,11 @@
 #include <iostream>
 #include <fstream>
-#include "TuringMachine.h"
+#include <optional>
 
-bool readFromFile(const std::string& filename, std::string& output) {
+#define POST_SYSTEM_EMULATOR
+
+bool readFromFile(const std::string &filename, std::string &output)
+{
     std::ifstream inputFile(filename);
     if (!inputFile) {
         std::cerr << "Error open file: " << filename << std::endl;
@@ -18,7 +21,8 @@ bool readFromFile(const std::string& filename, std::string& output) {
     return true;
 }
 
-bool writeToFile(const std::string& filename, const std::string& str) {
+bool writeToFile(const std::string &filename, const std::string &str)
+{
     std::ofstream outputFile(filename);
     if (!outputFile) {
         std::cerr << "Error open file: " << filename << std::endl;
@@ -30,7 +34,10 @@ bool writeToFile(const std::string& filename, const std::string& str) {
     return true;
 }
 
-int main()
+#if defined(TURING_MACHINE)
+#include "TuringMachine.h"
+
+int _main()
 {
     auto turingMachine = (new TuringMachineBuilder())
         ->setAlphabet(A{'1', '*', ' ', 'x', 'c', '='})
@@ -68,7 +75,7 @@ int main()
         })
         ->get();
 
-    std::string tape = "111*11=";
+    std::string tape = "111*11= ";
     readFromFile("../inputTape.txt", tape);
     if (!turingMachine.isValidTape(tape))
         return -555;
@@ -84,4 +91,45 @@ int main()
     writeToFile("../outputTape.txt", turingMachine.getTape());
 
     return 0;
+}
+#elif defined(POST_SYSTEM_EMULATOR)
+#include "PostSystemEmulator.h"
+
+int _main()
+{
+    std::string sourceData = R"(
+        A={1,+,/,=};
+        X={x,y};
+        A1={1};
+        R={
+            "x/x=->/x=1",
+            "x+/y=->=x"
+        };
+    )";
+
+    PostSystemSourceDataParser sourceDataParser(sourceData);
+    auto postSystemEmulatorBuilder = (new PostSystemEmulatorBuilder())
+        ->setAlphabet(sourceDataParser.getA())
+        ->setAxioms(sourceDataParser.getA1())
+        ->setVariables(sourceDataParser.getX());
+
+    for (const auto &rule : sourceDataParser.getR())
+        postSystemEmulatorBuilder->addRule(rule);
+
+    auto postSystemEmulator = postSystemEmulatorBuilder->get();
+    postSystemEmulator.setLine("11111+111111111/111=");
+    postSystemEmulator.run();
+
+    return 0;
+}
+#else
+int _main()
+{ return 0; }
+#endif
+
+int main()
+{
+
+    return _main();
+
 }
