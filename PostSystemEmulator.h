@@ -6,6 +6,7 @@
 #include <memory>
 #include <regex>
 #include <unordered_map>
+#include <iomanip>
 
 typedef std::set<char> A;       // Constant alphabet
 typedef std::set<char> X;       // Variables alphabet
@@ -148,10 +149,27 @@ public:
 
     std::string run()
     {
+        const int lineWidth = 30;
+        const int ruleWidth = 20;
+
+        std::cout << std::left
+                  << std::setw(lineWidth) << "Line Before"
+                  << std::setw(ruleWidth) << "Rule Applied"
+                  << "Line After" << std::endl;
+        std::cout << std::string(60, '-') << std::endl;
+
+        std::string lineBefore = line;
+
         while (applyAnyRule())
         {
-            std::cout << "Rule=[" << lastRule.pattern << " -> " << lastRule.placeholder << "]"
-            << "\tLine:[" << line << "]" <<  std::endl;
+            std::string ruleApplied = lastRule.pattern + " -> " + lastRule.placeholder;
+
+            std::cout << std::left
+                      << std::setw(lineWidth) << lineBefore
+                      << std::setw(ruleWidth) << ruleApplied
+                      << line << std::endl; // `line` после применения правила
+
+            lineBefore = line;
         }
         return line;
     }
@@ -165,6 +183,16 @@ private:
     A1 a1;
     R r;
     std::string sourceData;
+    std::string line;
+
+    void parseLine()
+    {
+        std::regex aRegex(R"(.*)");
+        std::smatch match;
+        if (std::regex_search(sourceData, match, aRegex)) {
+            line = match.str();
+        }
+    }
 
     void parseA()
     {
@@ -223,31 +251,23 @@ private:
         }
     }
 public:
-    explicit PostSystemSourceDataParser(const std::string &sourceData)
+    explicit PostSystemSourceDataParser(const std::string &data)
     {
-        this->sourceData = sourceData;
-        this->parseA();
-        this->parseX();
-        this->parseA1();
-        this->parseR();
+        sourceData = data;
+        parseLine();
+        parseA();
+        parseX();
+        parseA1();
+        parseR();
     }
-    [[nodiscard]] const A &getA() const
-    {
-        return a;
-    }
-    [[nodiscard]] const X &getX() const
-    {
-        return x;
-    }
-    [[nodiscard]] const A1 &getA1() const
-    {
-        return a1;
-    }
-    [[nodiscard]] const R &getR() const
-    {
-        return r;
-    }
+
+    [[nodiscard]] const A &getA() const { return a; }
+    [[nodiscard]] const X &getX() const { return x; }
+    [[nodiscard]] const A1 &getA1() const { return a1; }
+    [[nodiscard]] const R &getR() const { return r; }
+    [[nodiscard]] const std::string &getLine() const { return line; }
 };
+
 
 class PostSystemEmulatorBuilder
 {

@@ -2,6 +2,7 @@
 #include <fstream>
 #include <optional>
 
+//#define TURING_MACHINE
 #define POST_SYSTEM_EMULATOR
 
 bool readFromFile(const std::string &filename, std::string &output)
@@ -13,8 +14,8 @@ bool readFromFile(const std::string &filename, std::string &output)
     }
 
     std::string line;
-    if (std::getline(inputFile, line)) {
-        output = line;
+    while (std::getline(inputFile, line)) {
+        output += line += '\n';
     }
 
     inputFile.close();
@@ -97,28 +98,43 @@ int _main()
 
 int _main()
 {
-    std::string sourceData = R"(
-        A={1,+,/,=};
-        X={x,y};
-        A1={1};
-        R={
-            "x/x=->/x=1",
-            "x+/y=->=x"
-        };
-    )";
+    std::string sourceData;
+    {
+        readFromFile("../PostSystemIniABOBA.txt", sourceData);
 
-    PostSystemSourceDataParser sourceDataParser(sourceData);
-    auto postSystemEmulatorBuilder = (new PostSystemEmulatorBuilder())
-        ->setAlphabet(sourceDataParser.getA())
-        ->setAxioms(sourceDataParser.getA1())
-        ->setVariables(sourceDataParser.getX());
+        PostSystemSourceDataParser sourceDataParser(sourceData);
+        auto postSystemEmulatorBuilder = (new PostSystemEmulatorBuilder())
+            ->setAlphabet(sourceDataParser.getA())
+            ->setAxioms(sourceDataParser.getA1())
+            ->setVariables(sourceDataParser.getX());
 
-    for (const auto &rule : sourceDataParser.getR())
-        postSystemEmulatorBuilder->addRule(rule);
+        for (const auto &rule : sourceDataParser.getR())
+            postSystemEmulatorBuilder->addRule(rule);
 
-    auto postSystemEmulator = postSystemEmulatorBuilder->get();
-    postSystemEmulator.setLine("11111+111111111/111=");
-    postSystemEmulator.run();
+        auto postSystemEmulator = postSystemEmulatorBuilder->get();
+        postSystemEmulator.setLine(sourceDataParser.getLine());
+
+        postSystemEmulator.run();
+    }
+    std::cout << std::endl << std::endl << std::endl << std::endl;
+    sourceData.clear();
+    {
+        readFromFile("../PostSystemIni.txt", sourceData);
+
+        PostSystemSourceDataParser sourceDataParser(sourceData);
+        auto postSystemEmulatorBuilder = (new PostSystemEmulatorBuilder())
+            ->setAlphabet(sourceDataParser.getA())
+            ->setAxioms(sourceDataParser.getA1())
+            ->setVariables(sourceDataParser.getX());
+
+        for (const auto &rule : sourceDataParser.getR())
+            postSystemEmulatorBuilder->addRule(rule);
+
+        auto postSystemEmulator = postSystemEmulatorBuilder->get();
+        postSystemEmulator.setLine(sourceDataParser.getLine());
+
+        postSystemEmulator.run();
+    }
 
     return 0;
 }
@@ -129,7 +145,5 @@ int _main()
 
 int main()
 {
-
     return _main();
-
 }
